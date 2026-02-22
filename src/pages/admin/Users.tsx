@@ -1,56 +1,95 @@
+import { useState, useEffect } from 'react';
+import { api } from '../../lib/api';
+import { Loader2 } from 'lucide-react';
+
+interface UserAccount {
+  id: string;
+  nickname: string;
+  avatarUrl: string;
+  wechatOpenId: string;
+  createdAt: string;
+}
+
 const Users = () => {
-  const users = [
-    { id: 1, name: 'Alice Smith', email: 'alice@example.com', role: '艺术家', status: '活跃' },
-    { id: 2, name: 'Bob Jones', email: 'bob@example.com', role: '浏览者', status: '活跃' },
-    { id: 3, name: 'Charlie Day', email: 'charlie@example.com', role: '艺术家', status: '已暂停' },
-  ];
+  const [users, setUsers] = useState<UserAccount[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get<UserAccount[]>('/admin/user-accounts');
+      setUsers(data || []);
+    } catch (error) {
+      console.error('Failed to fetch users', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return '-';
+    return new Date(dateString).toLocaleString('zh-CN', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit'
+    });
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold font-display">用户管理</h1>
-        <button className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">
-          添加用户
-        </button>
       </div>
 
       <div className="bg-card border border-white/10 rounded-xl overflow-hidden">
-        <table className="w-full text-left">
-          <thead className="bg-white/5 text-muted-foreground">
-            <tr>
-              <th className="px-6 py-4 font-medium">姓名</th>
-              <th className="px-6 py-4 font-medium">邮箱</th>
-              <th className="px-6 py-4 font-medium">角色</th>
-              <th className="px-6 py-4 font-medium">状态</th>
-              <th className="px-6 py-4 font-medium">操作</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-white/5">
-            {users.map((user) => (
-              <tr key={user.id} className="hover:bg-white/5 transition-colors">
-                <td className="px-6 py-4">{user.name}</td>
-                <td className="px-6 py-4 text-muted-foreground">{user.email}</td>
-                <td className="px-6 py-4">
-                  <span className="bg-blue-500/20 text-blue-400 px-2 py-1 rounded text-xs border border-blue-500/20">
-                    {user.role}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <span className={`px-2 py-1 rounded text-xs border ${
-                    user.status === '活跃' 
-                      ? 'bg-green-500/20 text-green-400 border-green-500/20' 
-                      : 'bg-red-500/20 text-red-400 border-red-500/20'
-                  }`}>
-                    {user.status}
-                  </span>
-                </td>
-                <td className="px-6 py-4">
-                  <button className="text-sm text-primary hover:underline">编辑</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        {loading ? (
+            <div className="flex justify-center items-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+        ) : (
+            <table className="w-full text-left">
+              <thead className="bg-white/5 text-muted-foreground">
+                <tr>
+                  <th className="px-6 py-4 font-medium">头像</th>
+                  <th className="px-6 py-4 font-medium">昵称</th>
+                  <th className="px-6 py-4 font-medium">OpenID</th>
+                  <th className="px-6 py-4 font-medium">注册时间</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-white/5">
+                {users.length === 0 ? (
+                    <tr>
+                        <td colSpan={5} className="px-6 py-8 text-center text-muted-foreground">
+                            暂无用户数据
+                        </td>
+                    </tr>
+                ) : (
+                    users.map((user) => (
+                      <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                        <td className="px-6 py-4">
+                            {user.avatarUrl ? (
+                                <img src={user.avatarUrl} alt={user.nickname} className="w-8 h-8 rounded-full" />
+                            ) : (
+                                <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center text-xs">
+                                    {user.nickname?.[0] || '?'}
+                                </div>
+                            )}
+                        </td>
+                        <td className="px-6 py-4 font-medium">{user.nickname || '未命名'}</td>
+                        <td className="px-6 py-4 text-muted-foreground font-mono text-xs">{user.wechatOpenId}</td>
+                        <td className="px-6 py-4 text-muted-foreground text-sm">{formatDate(user.createdAt)}</td>
+                      </tr>
+                    ))
+                )}
+              </tbody>
+            </table>
+        )}
       </div>
     </div>
   );

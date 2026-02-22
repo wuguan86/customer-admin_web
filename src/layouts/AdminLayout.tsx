@@ -8,7 +8,8 @@ import {
   LogOut, 
   LayoutDashboard,
   User,
-  FileText
+  FileText,
+  Shield
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
@@ -43,6 +44,7 @@ const AdminLayout = () => {
   };
 
   const navItems = [
+    { path: '/admin/accounts', label: '管理员', icon: Shield },
     { path: '/admin/users', label: '用户管理', icon: Users },
     { path: '/admin/members', label: '会员管理', icon: Crown },
     { path: '/admin/config', label: '会员配置', icon: Settings },

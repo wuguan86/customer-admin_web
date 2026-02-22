@@ -38,30 +38,36 @@ class ApiClient {
       
       // Use text() first to safely handle empty responses or non-JSON errors
       const text = await response.text();
-      let data;
+      let result;
       try {
-        data = text ? JSON.parse(text) : {};
+        result = text ? JSON.parse(text) : {};
       } catch (e) {
         console.warn('Response is not JSON:', text);
-        // If parsing fails, treat body as error message if status is error
-        // or just return empty object if status is ok (though unlikely for REST API)
-        data = { message: text || response.statusText };
+        result = { msg: text || response.statusText, code: -1 };
       }
 
       if (!response.ok) {
-        // Handle 401 Unauthorized
         if (response.status === 401) {
           localStorage.removeItem('token');
           localStorage.removeItem('adminUser');
           window.location.href = '/login';
           throw new Error('会话已过期，请重新登录');
         }
-        
-        const errorMessage = (data && data.message) || '请求失败';
+        const errorMessage = (result && result.msg) || '请求失败';
         throw new Error(errorMessage);
       }
 
-      return data as T;
+      // Handle unified Result<T> format
+      if (result && typeof result === 'object' && 'code' in result) {
+        if (result.code === 0) {
+          return result.data as T;
+        } else {
+          throw new Error(result.msg || '业务处理失败');
+        }
+      }
+
+      // Fallback for endpoints not yet using Result<T> (if any)
+      return result as T;
     } catch (error) {
       const message = error instanceof Error ? error.message : '网络错误';
       toast.error(message);

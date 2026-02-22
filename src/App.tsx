@@ -7,6 +7,7 @@ import MemberConfig from './pages/admin/MemberConfig';
 import Templates from './pages/admin/Templates';
 import Points from './pages/admin/Points';
 import Payment from './pages/admin/Payment';
+import AdminAccounts from './pages/admin/AdminAccounts';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
         <Route path="/admin" element={<AdminLayout />}>
           <Route index element={<Navigate to="/admin/users" replace />} />
           <Route path="users" element={<Users />} />
+          <Route path="accounts" element={<AdminAccounts />} />
           <Route path="members" element={<Members />} />
           <Route path="config" element={<MemberConfig />} />
           <Route path="templates" element={<Templates />} />
