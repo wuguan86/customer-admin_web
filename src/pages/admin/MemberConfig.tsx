@@ -11,8 +11,9 @@ interface MembershipPlan {
   type: PlanType;
   name: string;
   priceCents: number;
-  durationDays: number;
-  seats: number;
+  sortWeight: number;
+  isRecommended: boolean;
+  periodType: string;
   pointsIncluded: number;
   bonusPoints: number;
   enabled: boolean;
@@ -25,8 +26,9 @@ interface PlanFormData {
   type: PlanType;
   name: string;
   priceCents: number;
-  durationDays: number;
-  seats: number;
+  sortWeight: number;
+  isRecommended: boolean;
+  periodType: string;
   pointsIncluded: number;
   bonusPoints: number;
   description: string;
@@ -38,8 +40,9 @@ const DEFAULT_FORM_DATA: PlanFormData = {
   type: 'SUBSCRIPTION',
   name: '',
   priceCents: 0,
-  durationDays: 30,
-  seats: 1,
+  sortWeight: 0,
+  isRecommended: false,
+  periodType: 'MONTHLY',
   pointsIncluded: 0,
   bonusPoints: 0,
   description: '',
@@ -93,8 +96,9 @@ const MemberConfig = () => {
       type: plan.type as PlanType,
       name: plan.name,
       priceCents: plan.priceCents,
-      durationDays: plan.durationDays,
-      seats: plan.seats,
+      sortWeight: plan.sortWeight,
+      isRecommended: plan.isRecommended,
+      periodType: plan.periodType,
       pointsIncluded: plan.pointsIncluded,
       bonusPoints: plan.bonusPoints,
       description: plan.description,
@@ -162,73 +166,164 @@ const MemberConfig = () => {
         </button>
       </div>
 
-      <div className="grid md:grid-cols-3 gap-6">
-        {plans.map((plan) => {
-          let features: string[] = [];
-          try {
-            const parsed = JSON.parse(plan.featuresJson || '[]');
-            if (Array.isArray(parsed)) {
-              features = parsed;
-            } else if (typeof parsed === 'object' && parsed !== null) {
-              const highlights = (parsed as { highlights?: unknown }).highlights;
-              if (Array.isArray(highlights)) {
-                features = highlights as string[];
+      <div className="space-y-8">
+        <div>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="w-2 h-6 bg-blue-500 rounded-full"></span>
+            订阅会员
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {plans.filter(p => p.type === 'SUBSCRIPTION').map((plan) => {
+              let features: string[] = [];
+              try {
+                const parsed = JSON.parse(plan.featuresJson || '[]');
+                if (Array.isArray(parsed)) {
+                  features = parsed;
+                } else if (typeof parsed === 'object' && parsed !== null) {
+                  const highlights = (parsed as { highlights?: unknown }).highlights;
+                  if (Array.isArray(highlights)) {
+                    features = highlights as string[];
+                  }
+                }
+              } catch (e) {
+                features = [];
               }
-            }
-          } catch (e) {
-            features = [];
-          }
 
-          return (
-            <div key={plan.id} className={`bg-card border ${plan.enabled ? 'border-white/10' : 'border-red-500/30'} rounded-xl p-6 relative group hover:border-primary/50 transition-colors`}>
-              <div className={`absolute top-0 left-0 w-full h-1 ${plan.type === 'SUBSCRIPTION' ? 'bg-blue-500' : 'bg-green-500'} rounded-t-xl opacity-50`} />
-              
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="text-xl font-bold">{plan.name}</h3>
-                    {!plan.enabled && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">已下架</span>}
+              return (
+                <div key={plan.id} className={`bg-card border ${plan.enabled ? 'border-white/10' : 'border-red-500/30'} rounded-xl p-6 relative group hover:border-primary/50 transition-colors`}>
+                  <div className={`absolute top-0 left-0 w-full h-1 ${plan.type === 'SUBSCRIPTION' ? 'bg-blue-500' : 'bg-green-500'} rounded-t-xl opacity-50`} />
+                  
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold">{plan.name}</h3>
+                        {!plan.enabled && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">已下架</span>}
+                      </div>
+                      <p className="text-2xl font-display text-primary mt-1">
+                        ¥{plan.priceCents / 100}
+                        {plan.type === 'SUBSCRIPTION' && <span className="text-sm text-muted-foreground ml-1">/{plan.periodType === 'YEARLY' ? '年' : '月'}</span>}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                         <span className="text-xs bg-white/10 text-muted-foreground px-2 py-0.5 rounded">权重: {plan.sortWeight}</span>
+                         {plan.isRecommended && <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">推荐</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleToggleEnabled(plan)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        title={plan.enabled ? "下架" : "上架"}
+                      >
+                        {plan.enabled ? <Trash2 className="h-4 w-4 text-red-400" /> : <Check className="h-4 w-4 text-green-400" />}
+                      </button>
+                      <button 
+                        onClick={() => handleOpenEdit(plan)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground hover:text-white" />
+                      </button>
+                    </div>
                   </div>
-                  <p className="text-2xl font-display text-primary mt-1">
-                    ¥{plan.priceCents / 100}
-                    {plan.type === 'SUBSCRIPTION' && <span className="text-sm text-muted-foreground ml-1">/{plan.durationDays}天</span>}
-                  </p>
-                </div>
-                <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <button 
-                    onClick={() => handleToggleEnabled(plan)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                    title={plan.enabled ? "下架" : "上架"}
-                  >
-                    {plan.enabled ? <Trash2 className="h-4 w-4 text-red-400" /> : <Check className="h-4 w-4 text-green-400" />}
-                  </button>
-                  <button 
-                    onClick={() => handleOpenEdit(plan)}
-                    className="p-2 hover:bg-white/10 rounded-lg transition-colors"
-                  >
-                    <Edit2 className="h-4 w-4 text-muted-foreground hover:text-white" />
-                  </button>
-                </div>
-              </div>
 
-              <div className="space-y-3 min-h-[100px]">
-                {features.slice(0, 5).map((feature, index) => (
-                  <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
-                    <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
-                    {feature}
+                  <div className="space-y-3 min-h-[100px]">
+                    {features.slice(0, 5).map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                        {feature}
+                      </div>
+                    ))}
+                    {features.length > 5 && (
+                      <div className="text-xs text-muted-foreground pl-4">...还有 {features.length - 5} 项</div>
+                    )}
                   </div>
-                ))}
-                {features.length > 5 && (
-                  <div className="text-xs text-muted-foreground pl-4">...还有 {features.length - 5} 项</div>
-                )}
-              </div>
-              
-              <div className="mt-4 text-xs text-muted-foreground">
-                类型: {plan.type === 'SUBSCRIPTION' ? '订阅会员' : '积分充值'}
-              </div>
-            </div>
-          );
-        })}
+                  
+                  <div className="mt-4 text-xs text-muted-foreground">
+                    类型: {plan.type === 'SUBSCRIPTION' ? '订阅会员' : '积分充值'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        <div>
+          <h2 className="text-xl font-bold mb-4 flex items-center gap-2">
+            <span className="w-2 h-6 bg-green-500 rounded-full"></span>
+            积分充值
+          </h2>
+          <div className="grid md:grid-cols-3 gap-6">
+            {plans.filter(p => p.type === 'POINTS').map((plan) => {
+              let features: string[] = [];
+              try {
+                const parsed = JSON.parse(plan.featuresJson || '[]');
+                if (Array.isArray(parsed)) {
+                  features = parsed;
+                } else if (typeof parsed === 'object' && parsed !== null) {
+                  const highlights = (parsed as { highlights?: unknown }).highlights;
+                  if (Array.isArray(highlights)) {
+                    features = highlights as string[];
+                  }
+                }
+              } catch (e) {
+                features = [];
+              }
+
+              return (
+                <div key={plan.id} className={`bg-card border ${plan.enabled ? 'border-white/10' : 'border-red-500/30'} rounded-xl p-6 relative group hover:border-primary/50 transition-colors`}>
+                  <div className={`absolute top-0 left-0 w-full h-1 ${plan.type === 'SUBSCRIPTION' ? 'bg-blue-500' : 'bg-green-500'} rounded-t-xl opacity-50`} />
+                  
+                  <div className="flex justify-between items-start mb-4">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h3 className="text-xl font-bold">{plan.name}</h3>
+                        {!plan.enabled && <span className="text-xs bg-red-500/20 text-red-400 px-2 py-0.5 rounded">已下架</span>}
+                      </div>
+                      <p className="text-2xl font-display text-primary mt-1">
+                        ¥{plan.priceCents / 100}
+                        {plan.type === 'SUBSCRIPTION' && <span className="text-sm text-muted-foreground ml-1">/{plan.periodType === 'YEARLY' ? '年' : '月'}</span>}
+                      </p>
+                      <div className="flex items-center gap-2 mt-1">
+                         <span className="text-xs bg-white/10 text-muted-foreground px-2 py-0.5 rounded">权重: {plan.sortWeight}</span>
+                         {plan.isRecommended && <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded">推荐</span>}
+                      </div>
+                    </div>
+                    <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button 
+                        onClick={() => handleToggleEnabled(plan)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                        title={plan.enabled ? "下架" : "上架"}
+                      >
+                        {plan.enabled ? <Trash2 className="h-4 w-4 text-red-400" /> : <Check className="h-4 w-4 text-green-400" />}
+                      </button>
+                      <button 
+                        onClick={() => handleOpenEdit(plan)}
+                        className="p-2 hover:bg-white/10 rounded-lg transition-colors"
+                      >
+                        <Edit2 className="h-4 w-4 text-muted-foreground hover:text-white" />
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 min-h-[100px]">
+                    {features.slice(0, 5).map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <div className="h-1.5 w-1.5 rounded-full bg-white/20" />
+                        {feature}
+                      </div>
+                    ))}
+                    {features.length > 5 && (
+                      <div className="text-xs text-muted-foreground pl-4">...还有 {features.length - 5} 项</div>
+                    )}
+                  </div>
+                  
+                  <div className="mt-4 text-xs text-muted-foreground">
+                    类型: {plan.type === 'SUBSCRIPTION' ? '订阅会员' : '积分充值'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
 
       {/* Modal */}
@@ -288,25 +383,41 @@ const MemberConfig = () => {
                 </div>
               </div>
 
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-3 gap-4">
                 <div className="space-y-2">
-                  <label className="text-sm font-medium">有效期(天)</label>
+                  <label className="text-sm font-medium">套餐周期</label>
+                  <select 
+                    value={formData.periodType}
+                    onChange={e => setFormData({...formData, periodType: e.target.value})}
+                    className="w-full bg-secondary/50 border border-white/10 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-primary/50"
+                  >
+                    <option value="MONTHLY">月付</option>
+                    <option value="YEARLY">年付</option>
+                  </select>
+                </div>
+                <div className="space-y-2">
+                  <label className="text-sm font-medium">排序权重 (越小越靠前)</label>
                   <input 
                     type="number"
-                    value={formData.durationDays}
-                    onChange={e => setFormData({...formData, durationDays: parseInt(e.target.value) || 0})}
+                    value={formData.sortWeight}
+                    onChange={e => setFormData({...formData, sortWeight: parseInt(e.target.value) || 0})}
                     className="w-full bg-secondary/50 border border-white/10 rounded-lg px-3 py-2"
                   />
                 </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">席位</label>
-                  <input 
-                    type="number"
-                    value={formData.seats}
-                    onChange={e => setFormData({...formData, seats: parseInt(e.target.value) || 0})}
-                    className="w-full bg-secondary/50 border border-white/10 rounded-lg px-3 py-2"
-                  />
+                <div className="space-y-2 flex flex-col justify-center">
+                   <label className="flex items-center gap-2 cursor-pointer mt-6">
+                    <input 
+                      type="checkbox"
+                      checked={formData.isRecommended}
+                      onChange={e => setFormData({...formData, isRecommended: e.target.checked})}
+                      className="w-4 h-4 rounded border-gray-300 text-primary focus:ring-primary"
+                    />
+                    <span className="text-sm font-medium">设为推荐</span>
+                  </label>
                 </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <label className="text-sm font-medium">含积分</label>
                   <input 

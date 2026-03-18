@@ -7,7 +7,7 @@ interface RequestOptions extends RequestInit {
 const BASE_URL = '/api';
 
 class ApiClient {
-  private getHeaders(): HeadersInit {
+  private getHeaders(): Record<string, string> {
     const token = localStorage.getItem('token');
     return {
       'Content-Type': 'application/json',
@@ -17,7 +17,7 @@ class ApiClient {
   }
 
   private async request<T>(endpoint: string, options: RequestOptions = {}): Promise<T> {
-    const { params, headers, ...customConfig } = options;
+    const { params, headers: customHeaders, ...customConfig } = options;
     
     let url = `${BASE_URL}${endpoint}`;
     if (params) {
@@ -25,12 +25,18 @@ class ApiClient {
       url += `?${queryString}`;
     }
 
+    const headers = {
+      ...this.getHeaders(),
+      ...(customHeaders as Record<string, string>),
+    };
+
+    if (customConfig.body instanceof FormData) {
+      delete headers['Content-Type'];
+    }
+
     const config: RequestInit = {
       ...customConfig,
-      headers: {
-        ...this.getHeaders(),
-        ...headers,
-      },
+      headers,
     };
 
     try {
@@ -80,11 +86,19 @@ class ApiClient {
   }
 
   post<T>(endpoint: string, body: unknown) {
-    return this.request<T>(endpoint, { method: 'POST', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { 
+      method: 'POST', 
+      body: isFormData ? (body as FormData) : JSON.stringify(body) 
+    });
   }
 
   put<T>(endpoint: string, body: unknown) {
-    return this.request<T>(endpoint, { method: 'PUT', body: JSON.stringify(body) });
+    const isFormData = body instanceof FormData;
+    return this.request<T>(endpoint, { 
+      method: 'PUT', 
+      body: isFormData ? (body as FormData) : JSON.stringify(body) 
+    });
   }
 
   delete<T>(endpoint: string) {

@@ -35,22 +35,27 @@ const LoginPage = () => {
       }
 
       if (!response.ok) {
-        throw new Error(data.message || '登录失败，请检查用户名或密码');
+        throw new Error(data.msg || data.message || '登录失败，请检查用户名或密码');
       }
 
       // Store auth data
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('adminUser', JSON.stringify({
-        id: data.adminUserId,
-        displayName: data.displayName,
-        tenantId: data.tenantId
-      }));
+      if (data.code === 0 && data.data) {
+        const loginResult = data.data;
+        localStorage.setItem('token', loginResult.token);
+        localStorage.setItem('adminUser', JSON.stringify({
+          id: loginResult.adminUserId,
+          displayName: loginResult.displayName,
+          tenantId: loginResult.tenantId
+        }));
 
-      toast.success('登录成功');
-      // Delay navigation slightly to show success message
-      setTimeout(() => {
-        navigate('/admin/users');
-      }, 500);
+        toast.success('登录成功');
+        // Delay navigation slightly to show success message
+        setTimeout(() => {
+          navigate('/admin/users');
+        }, 500);
+      } else {
+        throw new Error(data.msg || '登录失败，请检查用户名或密码');
+      }
     } catch (err) {
       const msg = err instanceof Error ? err.message : '发生未知错误';
       setError(msg);

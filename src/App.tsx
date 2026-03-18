@@ -8,6 +8,9 @@ import Templates from './pages/admin/Templates';
 import Points from './pages/admin/Points';
 import Payment from './pages/admin/Payment';
 import AdminAccounts from './pages/admin/AdminAccounts';
+import SystemConfig from './pages/admin/SystemConfig';
+import StatisticalConfig from './pages/admin/StatisticalConfig';
+import InvitationCodes from './pages/admin/InvitationCodes';
 
 function App() {
   return (
@@ -22,10 +25,13 @@ function App() {
           <Route path="users" element={<Users />} />
           <Route path="accounts" element={<AdminAccounts />} />
           <Route path="members" element={<Members />} />
+          <Route path="invitation-codes" element={<InvitationCodes />} />
           <Route path="config" element={<MemberConfig />} />
           <Route path="templates" element={<Templates />} />
           <Route path="points" element={<Points />} />
           <Route path="payment" element={<Payment />} />
+          <Route path="system" element={<SystemConfig />} />
+          <Route path="statistical" element={<StatisticalConfig />} />
         </Route>
       </Routes>
     </Router>

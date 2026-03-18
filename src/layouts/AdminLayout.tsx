@@ -9,7 +9,10 @@ import {
   LayoutDashboard,
   User,
   FileText,
-  Shield
+  Shield,
+  MessageSquare,
+  Ticket,
+  PieChart
 } from 'lucide-react';
 import { clsx } from 'clsx';
 import { useEffect, useState } from 'react';
@@ -47,10 +50,13 @@ const AdminLayout = () => {
     { path: '/admin/accounts', label: '管理员', icon: Shield },
     { path: '/admin/users', label: '用户管理', icon: Users },
     { path: '/admin/members', label: '会员管理', icon: Crown },
+    { path: '/admin/invitation-codes', label: '邀请码管理', icon: Ticket },
     { path: '/admin/config', label: '会员配置', icon: Settings },
     { path: '/admin/templates', label: '模板管理', icon: FileText },
     { path: '/admin/points', label: '积分管理', icon: Coins },
     { path: '/admin/payment', label: '支付管理', icon: CreditCard },
+    { path: '/admin/system', label: '客服配置', icon: MessageSquare },
+    { path: '/admin/statistical', label: '统计配置', icon: PieChart },
   ];
 
   return (
