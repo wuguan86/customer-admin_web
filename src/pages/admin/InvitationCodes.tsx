@@ -23,6 +23,7 @@ interface MembershipPlan {
   id: string;
   name: string;
   type: string;
+  periodType?: string;
 }
 
 interface PageResult<T> {
@@ -184,8 +185,19 @@ const InvitationCodes = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
+      let durationUnit = formData.durationUnit;
+      if (formData.type === 1) {
+        const selectedPlan = plans.find(p => p.id === formData.planId);
+        if (selectedPlan) {
+          if (selectedPlan.periodType === 'MONTHLY') durationUnit = 'Month';
+          else if (selectedPlan.periodType === 'YEARLY') durationUnit = 'Year';
+          else if (selectedPlan.periodType === 'PERMANENT') durationUnit = 'Day';
+        }
+      }
+
       const payload = {
         ...formData,
+        durationUnit,
         startTime: formData.startTime ? new Date(formData.startTime).toISOString() : null,
         endTime: formData.endTime ? new Date(formData.endTime).toISOString() : null
       };
@@ -212,7 +224,9 @@ const InvitationCodes = () => {
   const getPlanName = (id?: string) => {
     if (!id) return '';
     const plan = plans.find(p => p.id === id);
-    return plan ? plan.name : '未知套餐';
+    if (!plan) return '未知套餐';
+    const periodLabel = plan.periodType === 'MONTHLY' ? '月度' : plan.periodType === 'YEARLY' ? '年度' : plan.periodType === 'PERMANENT' ? '永久' : '';
+    return periodLabel ? `${plan.name}（${periodLabel}）` : plan.name;
   };
 
   return (
@@ -437,34 +451,24 @@ const InvitationCodes = () => {
                       onChange={(e) => setFormData({...formData, planId: e.target.value})}
                       className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
                     >
-                      {plans.map(plan => (
-                        <option key={plan.id} value={plan.id} className="bg-gray-800 text-white">{plan.name}</option>
-                      ))}
+                      {plans.map(plan => {
+                        const periodLabel = plan.periodType === 'MONTHLY' ? '月度' : plan.periodType === 'YEARLY' ? '年度' : plan.periodType === 'PERMANENT' ? '永久' : '';
+                        const label = periodLabel ? `${plan.name}（${periodLabel}）` : plan.name;
+                        return (
+                          <option key={plan.id} value={plan.id} className="bg-gray-800 text-white">{label}</option>
+                        );
+                      })}
                     </select>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-muted-foreground">时长</label>
-                      <input
-                        type="number"
-                        min="1"
-                        value={formData.duration}
-                        onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 1})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                      />
-                    </div>
-                    <div className="space-y-1.5">
-                      <label className="text-sm font-medium text-muted-foreground">单位</label>
-                      <select
-                        value={formData.durationUnit}
-                        onChange={(e) => setFormData({...formData, durationUnit: e.target.value})}
-                        className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
-                      >
-                        <option value="Month" className="bg-gray-800 text-white">月</option>
-                        <option value="Year" className="bg-gray-800 text-white">年</option>
-                        <option value="Day" className="bg-gray-800 text-white">天</option>
-                      </select>
-                    </div>
+                  <div className="space-y-1.5">
+                    <label className="text-sm font-medium text-muted-foreground">时长</label>
+                    <input
+                      type="number"
+                      min="1"
+                      value={formData.duration}
+                      onChange={(e) => setFormData({...formData, duration: parseInt(e.target.value) || 1})}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-primary"
+                    />
                   </div>
                 </>
               ) : (
